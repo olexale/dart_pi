@@ -16,7 +16,11 @@ final class Agent {
   final Logger _logger;
   final Session _session = Session();
 
-  new({required this._api, required this._logger});
+  new({required this._api, required this._logger, String? system}) {
+    if (system != null) {
+      _session.add(Message(role: 'system', content: system));
+    }
+  }
 
   Future<String> runTurn(String input) async {
     _session.add(Message(role: 'user', content: input));
