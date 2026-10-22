@@ -1,57 +1,24 @@
-import 'package:args/args.dart';
+import 'package:dart_pi/src/api.dart';
+import 'package:dart_pi/src/model/chat_completion_request.dart';
+import 'package:dart_pi/src/model/message.dart';
+import 'package:dio/dio.dart';
+import 'package:mason_logger/mason_logger.dart';
 
-const String version = '0.0.1';
+void main() async {
+  final api = Api(Dio(), baseUrl: 'http://127.0.0.1:11434');
+  final logger = Logger();
 
-ArgParser buildParser() {
-  return ArgParser()
-    ..addFlag(
-      'help',
-      abbr: 'h',
-      negatable: false,
-      help: 'Print this usage information.',
-    )
-    ..addFlag(
-      'verbose',
-      abbr: 'v',
-      negatable: false,
-      help: 'Show additional command output.',
-    )
-    ..addFlag('version', negatable: false, help: 'Print the tool version.');
-}
-
-void printUsage(ArgParser argParser) {
-  print('Usage: dart dart_pi.dart <flags> [arguments]');
-  print(argParser.usage);
-}
-
-void main(List<String> arguments) {
-  final ArgParser argParser = buildParser();
-  try {
-    final ArgResults results = argParser.parse(arguments);
-    bool verbose = false;
-
-    // Process the parsed arguments.
-    if (results.flag('help')) {
-      printUsage(argParser);
+  while (true) {
+    final input = logger.prompt('>>>');
+    if (input.isEmpty) {
       return;
     }
-    if (results.flag('version')) {
-      print('dart_pi version: $version');
-      return;
-    }
-    if (results.flag('verbose')) {
-      verbose = true;
-    }
 
-    // Act on the arguments provided.
-    print('Positional arguments: ${results.rest}');
-    if (verbose) {
-      print('[VERBOSE] All arguments: ${results.arguments}');
-    }
-  } on FormatException catch (e) {
-    // Print usage information if an invalid argument was provided.
-    print(e.message);
-    print('');
-    printUsage(argParser);
+    final request = ChatCompletionRequest(
+      model: 'gemma4:e2b',
+      messages: [Message(role: 'user', content: input)],
+    );
+    final response = await api.request(request);
+    logger.success(response.choices.first.message.content);
   }
 }
